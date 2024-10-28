@@ -1,0 +1,28 @@
+services:
+  users_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8001:8000
+    volumes:
+      - '.:/app'
+    depends_on:
+      - users_db
+    networks:
+      - users_network
+
+  users_db:
+    image: postgres:15.3
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - ./.pgdata:/var/lib/postgresql/data # Volume for persisting PostgreSQL data
+    ports:
+      - 54321:5432
+    networks:
+      - users_network
+
+networks:
+  users_network:

@@ -1,0 +1,8 @@
+services:
+  email_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - '.:/app'
+    
