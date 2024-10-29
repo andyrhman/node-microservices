@@ -37,6 +37,7 @@ export const AuthMiddleware = async (req: Request, res: Response, next: Function
         // }
 
         req["user"] = user;
+        req["scope"] = payload.scope;
         next();
     } catch (error) {
         return res.status(400).send({ message: "Invalid Request" });

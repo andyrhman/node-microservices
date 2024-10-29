@@ -1,22 +1,20 @@
 import { Response, Request } from "express";
-import { User } from "../entity/user.entity";
 import logger from "../config/logger";
 import myDataSource from "../config/db.config";
-import * as argon2 from 'argon2';
-import { sign, verify } from "jsonwebtoken";
 import { Order } from "../entity/order.entity";
 import axios from "axios";
+import { UserService } from "../service/user.service";
 
 export const Register = async (req: Request, res: Response) => {
     try {
         const body = req.body;
 
-        const response = await axios.post('http://172.17.0.1:8001/api/register', {
+        const user = await UserService.post('register', {
             ...body,
             is_ambassador: req.path === '/api/ambassador/register'
         });
 
-        res.send(response.data);
+        res.send(user);
     } catch (error) {
         logger.error(error);
         return res.status(400).send({ message: "Invalid Request" });
@@ -27,9 +25,10 @@ export const Login = async (req: Request, res: Response) => {
     try {
         const body = req.body;
 
-        const { data } = await axios.post('http://172.17.0.1:8001/api/login', {
+        const data = await UserService.post('login', {
             ...body,
             scope: req.path === '/api/admin/login' ? 'admin' : 'ambassador'
+
         });
 
         res.cookie('user_session', data['jwt'], {
@@ -44,7 +43,7 @@ export const Login = async (req: Request, res: Response) => {
         return res.status(400).send({ message: "Invalid Request" });
     }
 };
-
+ 
 export const AuthenticatedUser = async (req: Request, res: Response) => {
     try {
         const user = req["user"];
@@ -82,14 +81,9 @@ export const AuthenticatedUser = async (req: Request, res: Response) => {
 
 export const Logout = async (req: Request, res: Response) => {
     try {
-        // res.clearCookie('user_session');
-        const jwt = req.cookies["user_session"];
+        await UserService.post('logout', {}, req.cookies["user_session"]);
 
-        await axios.post('http://172.17.0.1:8001/api/logout', {}, {
-            headers: {
-                'Cookie': `user_session=${jwt}`
-            }
-        });
+        res.clearCookie('user_session');
 
         res.status(204).send(null);
     } catch (error) {
@@ -100,40 +94,8 @@ export const Logout = async (req: Request, res: Response) => {
 
 export const UpdateInfo = async (req: Request, res: Response) => {
     try {
-        const body = req.body;
-        const user = req["user"];
-
-        const repository = myDataSource.getRepository(User);
-
-        const existingUser = await repository.findOne({ where: { id: user.id } });
-
-        if (!existingUser) {
-            return res.status(400).send({ message: 'Invalid Request' });
-        }
-
-        if (body.fullname) {
-            existingUser.fullName = body.fullname;
-        }
-
-        if (body.email && body.email !== existingUser.email) {
-            const existingUserByEmail = await repository.findOne({ where: { email: body.email } });
-            if (existingUserByEmail) {
-                return res.status(400).send({ message: 'Email already exists' });
-            }
-            existingUser.email = body.email;
-        }
-
-        if (body.username && body.username !== existingUser.username) {
-            const existingUserByUsername = await repository.findOne({ where: { username: body.username } });
-            if (existingUserByUsername) {
-                return res.status(400).send({ message: 'Username already exists' });
-            }
-            existingUser.username = body.username;
-        }
-
-        await repository.update(user.id, req.body);
-
-        res.status(202).send(existingUser);
+        res.status(202).send(await UserService.put('users/info', req.body, req.cookies["user_session"])
+        );
     } catch (error) {
         logger.error(error);
         return res.status(400).send({ message: "Invalid Request" });
@@ -142,17 +104,7 @@ export const UpdateInfo = async (req: Request, res: Response) => {
 
 export const UpdatePassword = async (req: Request, res: Response) => {
     try {
-        const user = req["user"];
-
-        if (await req.body.password !== req.body.confirm_password) {
-            return res.status(400).send({ message: "Password not match" });
-        }
-
-        await myDataSource.getRepository(User).update(user.id, {
-            password: await argon2.hash(req.body.password)
-        });
-
-        res.status(202).send(user);
+        res.status(202).send(await UserService.put('users/password', req.body, req.cookies["user_session"]));
     } catch (error) {
         logger.error(error);
         return res.status(400).send({ message: "Invalid Request" });

@@ -4,11 +4,11 @@ import { Order } from "../entity/order.entity";
 import { Link } from "../entity/link.entity";
 import { Product } from "../entity/product.entity";
 import { OrderItem } from "../entity/order-item.entity";
-import { User } from "../entity/user.entity";
 import { client } from "..";
 import logger from "../config/logger";
 import Stripe from "stripe";
 import { producer } from "../kafka/config";
+import { UserService } from "../service/user.service";
 
 export const Orders = async (req: Request, res: Response) => {
     try {
@@ -47,6 +47,8 @@ export const CreateOrder = async (req: Request, res: Response) => {
         return res.status(400).send({ message: "Invalid Code" });
     }
 
+    const user = await UserService.get(`users/${link.user_id}`);
+
     const queryRunner = myDataSource.createQueryRunner();
 
     try {
@@ -54,9 +56,9 @@ export const CreateOrder = async (req: Request, res: Response) => {
         await queryRunner.startTransaction();
 
         let order = new Order();
-        order.user_id = link.user.id;
+        order.user_id = link.user_id;
         order.code = body.code;
-        order.ambassador_email = link.user.email;
+        order.ambassador_email = user['email'];
         order.fullName = body.fullName;
         order.email = body.email;
         order.address = body.address;
@@ -142,11 +144,9 @@ export const ConfirmOrder = async (req: Request, res: Response) => {
 
         await repository.update(order.id, { complete: true });
 
-        const user = await myDataSource.getRepository(User).findOne({
-            where: { id: order.user_id }
-        });
+        const user = await UserService.get(`users/${order.user_id}`);
 
-        await client.zIncrBy('rankings', order.ambassador_revenue, user.fullName);
+        await client.zIncrBy('rankings', order.ambassador_revenue, user['fullName']);
 
         const value = JSON.stringify({
             ...order,

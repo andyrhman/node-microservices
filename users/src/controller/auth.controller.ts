@@ -8,7 +8,6 @@ import { sign, verify } from "jsonwebtoken";
 import myDataSource from "../config/db.config";
 import * as argon2 from 'argon2';
 import { Token } from "../entity/token.entity";
-import { getRepository } from "typeorm";
 
 export const Register = async (req: Request, res: Response) => {
     try {
@@ -81,10 +80,18 @@ export const Login = async (req: Request, res: Response) => {
 
 export const AuthenticatedUser = async (req: Request, res: Response) => {
     try {
-        res.send(req["user"]);
+        const user = req["user"];
+
+        if ((req.params.scope == 'ambassador' && req["scope"] !== 'ambassador') || (req.params.scope == 'admin' && req["scope"] !== 'admin')) {
+            return res.status(401).send({
+                message: 'unauthorized'
+            });
+        }
+
+        res.send(user);
     } catch (error) {
         console.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        return res.status(400).send(error);
     }
 };
 
@@ -97,6 +104,73 @@ export const Logout = async (req: Request, res: Response) => {
         });
 
         res.status(204).send(null);
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send({ message: "Invalid Request" });
+    }
+};
+
+export const UpdateInfo = async (req: Request, res: Response) => {
+    try {
+        const body = req.body;
+        const user = req["user"];
+
+        const repository = myDataSource.getRepository(User);
+
+        const existingUser = await repository.findOne({ where: { id: user.id } });
+
+        if (!existingUser) {
+            return res.status(400).send({ message: 'Invalid Request' });
+        }
+
+        // ? Map "fullname" to "fullName" to ensure the backend always sees fullName
+        if (body.fullname) {
+            body.fullName = body.fullname;
+            delete body.fullname;
+        }
+
+        if (body.fullName) {
+            existingUser.fullName = body.fullName;
+        }
+
+        if (body.email && body.email !== existingUser.email) {
+            const existingUserByEmail = await repository.findOne({ where: { email: body.email } });
+            if (existingUserByEmail) {
+                return res.status(400).send({ message: 'Email already exists' });
+            }
+            existingUser.email = body.email;
+        }
+
+        if (body.username && body.username !== existingUser.username) {
+            const existingUserByUsername = await repository.findOne({ where: { username: body.username } });
+            if (existingUserByUsername) {
+                return res.status(400).send({ message: 'Username already exists' });
+            }
+            existingUser.username = body.username;
+        }
+
+        await repository.update(user.id, req.body);
+
+        res.status(202).send(existingUser);
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send({ message: "Invalid Request" });
+    }
+};
+
+export const UpdatePassword = async (req: Request, res: Response) => {
+    try {
+        const user = req["user"];
+
+        if (await req.body.password !== req.body.confirm_password) {
+            return res.status(400).send({ message: "Password not match" });
+        }
+
+        await myDataSource.getRepository(User).update(user.id, {
+            password: await argon2.hash(req.body.password)
+        });
+
+        res.status(202).send(user);
     } catch (error) {
         console.error(error);
         return res.status(400).send({ message: "Invalid Request" });

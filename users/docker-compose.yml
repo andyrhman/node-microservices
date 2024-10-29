@@ -3,14 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    ports:
-      - 8001:8000
+    container_name: users_ms
     volumes:
       - '.:/app'
     depends_on:
       - users_db
     networks:
-      - users_network
+      - users
 
   users_db:
     image: postgres:15.3
@@ -22,7 +21,8 @@ services:
     ports:
       - 54321:5432
     networks:
-      - users_network
+      - users
 
 networks:
-  users_network:
+  users:
+    name: users

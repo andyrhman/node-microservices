@@ -3,49 +3,49 @@ import { Link } from "../entity/link.entity";
 import logger from "../config/logger";
 import myDataSource from "../config/db.config";
 import { Order } from "../entity/order.entity";
-import { User } from "../entity/user.entity";
 import { client } from "../index";
+import { UserService } from "../service/user.service";
 
 export const Links = async (req: Request, res: Response) => {
     try {
         const links = await myDataSource.getRepository(Link).find({
             where: { user_id: req.params.id },
             relations: ['orders', 'orders.order_items']
-        })
+        });
 
-        res.send(links)
+        res.send(links);
     } catch (error) {
         logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" })
+        return res.status(400).send({ message: "Invalid Request" });
     }
-}
+};
 
 export const CreateLink = async (req: Request, res: Response) => {
     try {
-        const user = req['user']
+        const user = req['user'];
         const link = await myDataSource.getRepository(Link).save({
-            user,
+            user_id: user['id'],
             code: Math.random().toString(36).substring(6),
             products: req.body.products.map((id: any) => {
                 return {
                     id: id
-                }
+                };
             })
         });
 
         res.send(link);
     } catch (error) {
         logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" })
+        return res.status(400).send({ message: "Invalid Request" });
     }
-}
+};
 
 export const Stats = async (req: Request, res: Response) => {
     try {
         const user = req["user"];
 
         const links: Link[] = await myDataSource.getRepository(Link).find({
-            where: { user },
+            where: { user_id: user['id'] },
             relations: ['orders', 'orders.order_items']
         });
 
@@ -60,19 +60,19 @@ export const Stats = async (req: Request, res: Response) => {
                 * but for this project we count the revenue inside the controller
                 * use this alternative if you don't want to use the nestjs one
             */
-            const orders: Order[] = link.orders.filter(o => o.complete)
+            const orders: Order[] = link.orders.filter(o => o.complete);
 
             return {
                 code: link.code,
                 count: orders.length,
                 revenue: orders.reduce((s, o) => s + o.ambassador_revenue, 0)
-            }
-        }))
+            };
+        }));
     } catch (error) {
         logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" })
+        return res.status(400).send({ message: "Invalid Request" });
     }
-}
+};
 
 export const Rankings = async (req: Request, res: Response) => {
     try {
@@ -106,18 +106,22 @@ export const Rankings = async (req: Request, res: Response) => {
         */
     } catch (error) {
         logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" })
+        return res.status(400).send({ message: "Invalid Request" });
     }
-}
+};
 
 export const GetLink = async (req: Request, res: Response) => {
     try {
-        res.send(await myDataSource.getRepository(Link).findOne({
+        const link = await myDataSource.getRepository(Link).findOne({
             where: { code: req.params.code },
-            relations: ['user', 'products']
-        }));
+            relations: ['products']
+        });
+
+        link['user'] = await UserService.get(`users/${link.user_id}`);
+
+        res.send(link);
     } catch (error) {
         logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" })
+        return res.status(400).send({ message: "Invalid Request" });
     }
-}
+};

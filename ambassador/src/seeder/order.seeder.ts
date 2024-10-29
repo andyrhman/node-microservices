@@ -3,19 +3,18 @@ import logger from "../config/logger";
 import { fakerID_ID as faker } from "@faker-js/faker";
 import { Order } from "../entity/order.entity";
 import { OrderItem } from "../entity/order-item.entity";
-import { User } from "../entity/user.entity";
 import { randomInt } from "crypto";
+import { v4 as uuidv4 } from 'uuid';
 
 seederSource.initialize().then(async () => {
     const orderRepository = seederSource.getRepository(Order);
     const orderItemRepository = seederSource.getRepository(OrderItem);
-    const users = await seederSource.getRepository(User).find({});
 
     for (let i = 0; i < 30; i++) {
         const order = await orderRepository.save({
             code: faker.string.alphanumeric(7),
             ambassador_email: faker.internet.email(),
-            user_id: users[i % users.length].id,
+            user_id: uuidv4(),
             fullName: faker.person.fullName(),
             email: faker.internet.email(),
             address: faker.location.streetAddress({ useFullAddress: true }),

@@ -1,5 +1,4 @@
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "./user.entity";
 import { Product } from "./product.entity";
 import { Order } from "./order.entity";
 
@@ -11,12 +10,8 @@ export class Link {
     @Column({ unique: true })
     code: string;
 
-    @Column({ name: "user_id" })
+    @Column({ nullable: true })
     user_id: string;
-
-    @ManyToOne(() => User)
-    @JoinColumn({ name: "user_id" })
-    user: User;
 
     @ManyToMany(() => Product)
     @JoinTable({

@@ -1,23 +1,14 @@
 import { Request, Response } from "express";
-import { verify } from "jsonwebtoken";
-import myDataSource from "../config/db.config";
-import { User } from "../entity/user.entity";
-import logger from "../config/logger";
-import axios from "axios";
+import { UserService } from "../service/user.service";
 
 export const AuthMiddleware = async (req: Request, res: Response, next: Function) => {
     try {
-        const jwt = req.cookies["user_session"];
+        const scope = req.path.indexOf('api/ambassador') >= 0 ? 'ambassador' : 'admin';
 
-        const { data } = await axios.get('http://172.17.0.1:8001/api/user', {
-            headers: {
-                'Cookie': `user_session=${jwt}`
-            }
-        });
+        req["user"] = await UserService.get(`user/${scope}`, req.cookies["user_session"]);
 
-        req["user"] = data; 
         next();
     } catch (error) {
-        return res.status(400).send({ message: "Invalid Request" });
+        return res.status(401).send({message: "Unauthenticated"});
     }
 };
