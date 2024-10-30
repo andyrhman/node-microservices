@@ -9,7 +9,7 @@ import myDataSource from './config/db.config'
 import { ValidationMiddleware } from './middleware/validation.middleware';
 import { createClient } from 'redis';
  
-const app = express();
+const app = express(); 
 
 export const client = createClient({
     url: 'redis://redis:6379'

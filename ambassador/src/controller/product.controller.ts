@@ -1,5 +1,4 @@
 import myDataSource from "../config/db.config";
-import logger from "../config/logger";
 import sanitizeHtml from 'sanitize-html';
 import { Request, Response } from "express";
 import { Product } from "../entity/product.entity";
@@ -23,7 +22,7 @@ export const ProductsFrontend = async (req: Request, res: Response) => {
 
         res.send(products);
     } catch (error) {
-        logger.error(error);
+        console.error(error);
         return res.status(400).send({ message: "Invalid Request" });
     }
 };
@@ -92,7 +91,7 @@ export const ProductsBackend = async (req: Request, res: Response) => {
             last_page: Math.ceil(total / perPage)
         });
     } catch (error) {
-        logger.error(error);
+        console.error(error);
         return res.status(400).send({ message: "Invalid Request" });
     }
 };

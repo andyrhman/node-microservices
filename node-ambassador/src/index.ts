@@ -25,7 +25,7 @@ app.use(cors({
 }));
 
 myDataSource.initialize().then(async () => {
-    // await client.connect();
+    // await client.connect(); 
 
     routes(app);
 

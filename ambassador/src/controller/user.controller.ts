@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { client } from "..";
-import logger from "../config/logger";
 
 export const Rankings = async (req: Request, res: Response) => {
     try {
@@ -33,7 +32,7 @@ export const Rankings = async (req: Request, res: Response) => {
         
         */
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" })
+        console.error(error);
+        return res.status(400).send({ message: "Invalid Request" });
     }
-}
+};

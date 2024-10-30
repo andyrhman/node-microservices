@@ -1,5 +1,4 @@
 import { Response, Request } from "express";
-import logger from "../config/logger";
 import myDataSource from "../config/db.config";
 import { Order } from "../entity/order.entity";
 import axios from "axios";
@@ -11,13 +10,13 @@ export const Register = async (req: Request, res: Response) => {
 
         const user = await UserService.post('register', {
             ...body,
-            is_ambassador: req.path === '/api/ambassador/register'
+            is_ambassador: true
         });
 
         res.send(user);
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        console.error(error);
+        return res.status(400).send(error.data);
     }
 };
 
@@ -27,7 +26,7 @@ export const Login = async (req: Request, res: Response) => {
 
         const data = await UserService.post('login', {
             ...body,
-            scope: req.path === '/api/admin/login' ? 'admin' : 'ambassador'
+            scope: 'ambassador'
 
         });
 
@@ -39,18 +38,14 @@ export const Login = async (req: Request, res: Response) => {
 
         res.status(200).send({ message: "Successfully logged in!" });
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        console.error(error);
+        return res.status(400).send(error.data);
     }
 };
- 
+
 export const AuthenticatedUser = async (req: Request, res: Response) => {
     try {
         const user = req["user"];
-
-        if (req.path === '/api/admin/user') {
-            return res.send(user);
-        }
 
         /*
             * This code has different implementation as in nestjs ambassador
@@ -64,18 +59,16 @@ export const AuthenticatedUser = async (req: Request, res: Response) => {
         */
         const orders = await myDataSource.getRepository(Order).find({
             where: {
-                user_id: user['id'],
-                complete: true
-            },
-            relations: ['order_items']
+                user_id: user['id']
+            }
         });
 
-        user['revenue'] = orders.reduce((s, o) => s + o.ambassador_revenue, 0);
+        user['revenue'] = orders.reduce((s, o) => s + o.total, 0);
 
         res.send(user);
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        console.error(error);
+        return res.status(400).send(error.data);
     }
 };
 
@@ -87,8 +80,8 @@ export const Logout = async (req: Request, res: Response) => {
 
         res.status(204).send(null);
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        console.error(error);
+        return res.status(400).send(error.data);
     }
 };
 
@@ -97,8 +90,8 @@ export const UpdateInfo = async (req: Request, res: Response) => {
         res.status(202).send(await UserService.put('users/info', req.body, req.cookies["user_session"])
         );
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        console.error(error);
+        return res.status(400).send(error.data);
     }
 };
 
@@ -106,7 +99,7 @@ export const UpdatePassword = async (req: Request, res: Response) => {
     try {
         res.status(202).send(await UserService.put('users/password', req.body, req.cookies["user_session"]));
     } catch (error) {
-        logger.error(error);
-        return res.status(400).send({ message: "Invalid Request" });
+        console.error(error);
+        return res.status(400).send(error.data);
     }
 };
