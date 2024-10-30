@@ -1,0 +1,31 @@
+services:
+  admin_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8002:8000
+    volumes:
+      - '.:/app'
+    depends_on:
+      - admin_db
+    networks:
+      - admin
+      - users
+      
+  admin_db:
+    image: postgres:15.3
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - ./.pgdata:/var/lib/postgresql/data # Volume for persisting PostgreSQL data
+    ports:
+      - 54322:5432
+    networks:
+      - admin
+
+networks:
+  admin:
+  users:
+    external: true

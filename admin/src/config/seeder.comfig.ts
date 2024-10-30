@@ -1,6 +1,7 @@
-require('dotenv').config();
+import dotenv from 'dotenv'
+dotenv.config();
+
 import { DataSource } from "typeorm";
-import { User } from "../entity/user.entity";
 
 const seederSource = new DataSource({
     type: "postgres",
@@ -10,7 +11,7 @@ const seederSource = new DataSource({
     password: '123123',
     database: 'node_ambassador',
     entities: [
-        User
+        "src/entity/*.ts"
     ],
     logging: false,
     synchronize: true

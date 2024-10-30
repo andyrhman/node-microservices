@@ -1,9 +1,9 @@
-import { Kafka, Partitioners } from "kafkajs";
+import { Kafka, Partitioners  } from "kafkajs";
 import * as fs from 'fs';
 
-export const kafka = new Kafka({
-    clientId: 'email-consumer',
-    brokers: ['microservices-node-microsevices.k.aivencloud.com:22288'],
+const kafka = new Kafka({
+    clientId: process.env.KAFKA_CLIENT,
+    brokers: [process.env.KAFKA_BROKERS],
     ssl: {
         rejectUnauthorized: false,
         ca: [fs.readFileSync('src/cert/ca.pem', 'utf-8')],

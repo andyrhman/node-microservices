@@ -9,7 +9,6 @@ const startSeeding = async () => {
     await myDataSource.initialize();
 
     const users = await seederSource.getRepository(User).find();
-    console.log("Users fetched from seederSource:", users);
 
     const save_user = myDataSource.getRepository(User);
 

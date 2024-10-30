@@ -1,11 +1,14 @@
+import dotenv from 'dotenv'
+dotenv.config();
+
 import { EachMessagePayload, Kafka } from "kafkajs";
 import { createTransport } from "nodemailer";
 import * as fs from 'fs';
 import * as handlebars from 'handlebars';
 
 const kafka = new Kafka({
-    clientId: 'email-customer',
-    brokers: ['microservices-node-microsevices.k.aivencloud.com:22288'],
+    clientId: process.env.KAFKA_CLIENT,
+    brokers: [process.env.KAFKA_BROKERS],
     ssl: {
         rejectUnauthorized: false,
         ca: [fs.readFileSync('cert/ca.pem', 'utf-8')],
@@ -26,7 +29,7 @@ const transporter = createTransport({
 const run = async () => {
     await consumer.connect();
 
-    await consumer.subscribe({ topic: 'default' });
+    await consumer.subscribe({ topic: 'email_topic' });
 
     await consumer.run({
         eachMessage: async (message: EachMessagePayload) => {
