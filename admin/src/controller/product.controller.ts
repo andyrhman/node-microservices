@@ -11,7 +11,7 @@ export const Products = async (req: Request, res: Response) => {
             topic: 'ambassador_topic',
             messages: [
                 {
-                    key: "product_created",
+                    key: "productCreated",
                     value: JSON.stringify(products)
                 }
             ]
@@ -55,7 +55,7 @@ export const UpdateProduct = async (req: Request, res: Response) => {
             topic: 'ambassador_topic',
             messages: [
                 {
-                    key: "product_updated",
+                    key: "productUpdated",
                     value: JSON.stringify(product)
                 }
             ]
@@ -76,7 +76,7 @@ export const DeleteProduct = async (req: Request, res: Response) => {
             topic: 'ambassador_topic',
             messages: [
                 {
-                    key: "product_deleted",
+                    key: "productDeleted",
                     value: req.params.id
                 }
             ]
