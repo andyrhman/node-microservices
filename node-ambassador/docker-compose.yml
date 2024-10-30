@@ -1,20 +1,19 @@
 services:
-  ambassador_backend:
+  api:
     build:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - 8003:8000
+      - 8000:8000
     volumes:
       - '.:/app'
     depends_on:
-      - ambassador_db
-      - redis
+      - db
     networks:
-      - ambassador
+      - monolith
       - users
       
-  ambassador_db:
+  db:
     image: postgres:15.3
     restart: always
     env_file:
@@ -22,18 +21,18 @@ services:
     volumes:
       - ./.pgdata:/var/lib/postgresql/data # Volume for persisting PostgreSQL data
     ports:
-      - 54324:5432
+      - 54323:5432
     networks:
-      - ambassador
+      - monolith
       
-  redis: # never rename this to anything, use redis
-    image: redis
-    ports:
-      - 6379:6379
-    networks:
-      - ambassador
+  # redis: # never rename this to anything, use redis
+  #   image: redis
+  #   ports:
+  #     - 6379:6379
+  #   networks:
+  #     - monolith
 
 networks:
-  ambassador:
+  monolith:
   users:
     external: true

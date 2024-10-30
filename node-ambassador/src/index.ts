@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 dotenv.config();
 
+import logger from './config/logger';
 import express from 'express';
 import cors from 'cors';
 import routes from './routes';
@@ -13,7 +14,7 @@ const app = express();
 
 export const client = createClient({
     url: 'redis://redis:6379'
-}); 
+});
 
 app.use(express.json());
 app.use(cookieParser());
@@ -24,14 +25,14 @@ app.use(cors({
 }));
 
 myDataSource.initialize().then(async () => {
-    await client.connect();
+    // await client.connect();
 
     routes(app);
 
-    console.info("🗃️ Database has been initialized!");
+    logger.info("🗃️ Database has been initialized!");
     app.listen(8000, () => {
-        console.info('👍 Server listening on port 8000');
+        logger.info('👍 Server listening on port 8000');
     });
 }).catch((err) => {
-    console.error(err);
+    logger.error(err);
 });

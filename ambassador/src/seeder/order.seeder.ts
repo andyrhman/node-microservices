@@ -1,44 +1,86 @@
-import seederSource from "../config/seeder.comfig";
-import logger from "../config/logger";
-import { fakerID_ID as faker } from "@faker-js/faker";
-import { Order } from "../entity/order.entity";
-import { OrderItem } from "../entity/order-item.entity";
-import { randomInt } from "crypto";
-import { v4 as uuidv4 } from 'uuid';
+import myDataSource from "../config/db.config";
+import { Order as OrderEntity } from "../entity/order.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { DataSource } from "typeorm";
 
-seederSource.initialize().then(async () => {
-    const orderRepository = seederSource.getRepository(Order);
-    const orderItemRepository = seederSource.getRepository(OrderItem);
+@Entity('orders')
+export class Order {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
-    for (let i = 0; i < 30; i++) {
-        const order = await orderRepository.save({
-            code: faker.string.alphanumeric(7),
-            ambassador_email: faker.internet.email(),
-            user_id: uuidv4(),
-            fullName: faker.person.fullName(),
-            email: faker.internet.email(),
-            address: faker.location.streetAddress({ useFullAddress: true }),
-            country: faker.location.country(),
-            city: faker.location.city(),
-            zip: faker.location.zipCode(),
-            complete: true
-        })
+    @Column({ nullable: true })
+    transaction_id: string;
 
-        for (let j = 0; j < randomInt(1, 5); j++) {
-            await orderItemRepository.save({
-                order: order,
-                product_title: faker.commerce.productName(),
-                price: parseInt(faker.commerce.price({ min: 100000, max: 5000000, dec: 0 })),
-                quantity: randomInt(1, 5),
-                ambassador_revenue: randomInt(10000, 500000),
-                admin_revenue: randomInt(1000, 50000),
-            })
+    @Column()
+    user_id: string;
 
+    @Column()
+    code: string;
+
+    @OneToMany(() => OrderItem, orderItem => orderItem.order)
+    order_items: OrderItem[];
+}
+
+@Entity('order_items')
+export class OrderItem {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+
+    @Column()
+    ambassador_revenue: number;
+
+    @ManyToOne(() => Order, order => order.order_items)
+    @JoinColumn({ name: "order_id" })
+    order: Order;
+}
+
+const orderSeederSource = new DataSource({
+    type: "postgres",
+    host: '172.17.0.1', // ? Linux docker internal ip is 172.17.0.1
+    port: parseInt('54323'),
+    username: 'postgres',
+    password: '123123',
+    database: 'node_ambassador',
+    entities: [
+        Order, OrderItem
+    ],
+    logging: false,
+    synchronize: true
+});
+
+const startSeeding = async () => {
+    try {
+        // ! The entity for Order and OrderItem is different for seeder
+        // ! We use the entity define at Order & Orderitem at top
+        await orderSeederSource.initialize();
+        await myDataSource.initialize();
+
+        const orders = await orderSeederSource.getRepository(Order).find({ relations: ["order_items"] });
+
+        const orderRepository = myDataSource.getRepository(OrderEntity);
+
+        for (const order of orders) {
+            let total = 0;
+
+            for (const orderItem of order.order_items) {
+                total += orderItem.ambassador_revenue;
+            }
+
+            await orderRepository.save({
+                id: order.id,
+                user_id: order.user_id,
+                code: order.code,
+                total
+            });
         }
+        console.log("Seeding has been completed");
+    } catch (err) {
+        console.error("Error during Data Source initialization or seeding:", err);
+    } finally {
+        await orderSeederSource.destroy();
+        await myDataSource.destroy();
+        process.exit(0);
     }
+};
 
-    logger.info("🌱 Seeding has been completed")
-    process.exit(0);
-}).catch((err) => {
-    logger.error(err.message);
-})
+startSeeding();

@@ -1,8 +1,7 @@
-import dotenv from 'dotenv'
-dotenv.config();
+require('dotenv').config();
 import { DataSource } from "typeorm";
 
-const myDataSource = new DataSource({
+const seederSource = new DataSource({
     type: "postgres",
     host: process.env.POSTGRES_HOST,
     port: parseInt(process.env.POSTGRES_PORT || '5432'),
@@ -16,4 +15,4 @@ const myDataSource = new DataSource({
     synchronize: true
 });
 
-export default myDataSource;
+export default seederSource;

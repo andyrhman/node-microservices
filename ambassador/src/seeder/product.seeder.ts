@@ -1,22 +1,43 @@
-import seederSource from "../config/seeder.comfig";
-import logger from "../config/logger";
-import { fakerID_ID as faker } from "@faker-js/faker";
+import myDataSource from "../config/db.config";
 import { Product } from "../entity/product.entity";
+import { DataSource } from "typeorm";
 
-seederSource.initialize().then(async () => {
-    const repository = seederSource.getRepository(Product);
+const productSeederSource = new DataSource({
+    type: "postgres",
+    host: '172.17.0.1', // ? Linux docker internal ip is 172.17.0.1
+    port: parseInt('54323'),
+    username: 'postgres',
+    password: '123123',
+    database: 'node_ambassador',
+    entities: [
+        Product
+    ],
+    logging: false,
+    synchronize: true
+});
 
-    for (let i = 0; i < 30; i++) {
-        await repository.save({
-            title: faker.commerce.productName(),
-            description: faker.commerce.productDescription(),
-            image: faker.image.urlLoremFlickr({ width: 200, height: 200, category: 'food' }),
-            price: parseInt(faker.commerce.price({ min: 100000, max: 5000000, dec: 0 }))
-        })
+const startSeeding = async () => {
+    try {
+        // Initialize both data sources
+        await productSeederSource.initialize();
+        await myDataSource.initialize();
+
+        const products = await productSeederSource.getRepository(Product).find();
+
+        const repository = myDataSource.getRepository(Product);
+
+        for (const product of products) {
+            await repository.save(product);
+        }
+
+        console.log("Seeding has been completed");
+    } catch (err) {
+        console.error("Error during Data Source initialization or seeding:", err);
+    } finally {
+        await productSeederSource.destroy();
+        // await myDataSource.destroy();
+        process.exit(0);
     }
+};
 
-    logger.info("🌱 Seeding has been completed")
-    process.exit(0);
-}).catch((err) => {
-    logger.error("❌ Error during Data Source initialization:", err);
-})
+startSeeding();

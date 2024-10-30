@@ -2,7 +2,6 @@
 import seederSource from "../config/seeder.comfig";
 import myDataSource from "../config/db.config";
 import { Order } from "../entity/order.entity";
-import { OrderItem } from "../entity/order-item.entity";
 
 const startSeeding = async () => {
     try {

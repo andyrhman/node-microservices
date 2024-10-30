@@ -1,22 +1,44 @@
-import seederSource from "../config/seeder.comfig";
-import logger from "../config/logger";
-import { fakerID_ID as faker } from "@faker-js/faker";
+import { DataSource } from "typeorm";
 import { Link } from "../entity/link.entity";
-import { v4 as uuidv4 } from 'uuid';
+import { Product } from "../entity/product.entity";
+import { Order } from "../entity/order.entity";
+import myDataSource from "../config/db.config";
 
-seederSource.initialize().then(async () => {
-    const repository = seederSource.getRepository(Link);
+const linkSeederSource = new DataSource({
+    type: "postgres",
+    host: '172.17.0.1', // ? Linux docker internal ip is 172.17.0.1
+    port: parseInt('54323'),
+    username: 'postgres',
+    password: '123123',
+    database: 'node_ambassador',
+    entities: [
+        Link, Product, Order
+    ],
+    logging: false,
+    synchronize: true
+});
 
-    for (let i = 0; i < 30; i++) {
-        await repository.save({
-            code: faker.string.alphanumeric(7),
-            user_id: uuidv4(),
-            price: parseInt(faker.commerce.price({ min: 10000, max: 500000, dec: 0 }))
-        })
+const startSeeding = async () => {
+    try {
+        // Initialize both data sources
+        await linkSeederSource.initialize();
+        await myDataSource.initialize();
+
+        const links = await linkSeederSource.getRepository(Link).find({ relations: ["products"] });
+
+        const repository = myDataSource.getRepository(Link);
+
+        for (const link of links) {
+            await repository.save(link);
+        }
+        console.log("Seeding has been completed");
+    } catch (err) {
+        console.error("Error during Data Source initialization or seeding:", err);
+    } finally {
+        await linkSeederSource.destroy();
+        await myDataSource.destroy();
+        process.exit(0);
     }
+};
 
-    logger.info("🌱 Seeding has been completed")
-    process.exit(0);
-}).catch((err) => {
-    logger.error(err.message);
-})
+startSeeding();
