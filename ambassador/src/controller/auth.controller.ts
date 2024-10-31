@@ -1,7 +1,6 @@
 import { Response, Request } from "express";
 import myDataSource from "../config/db.config";
 import { Order } from "../entity/order.entity";
-import axios from "axios";
 import { UserService } from "../service/user.service";
 
 export const Register = async (req: Request, res: Response) => {

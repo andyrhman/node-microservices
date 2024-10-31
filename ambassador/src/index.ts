@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import myDataSource from './config/db.config'
 import { ValidationMiddleware } from './middleware/validation.middleware';
 import { createClient } from 'redis';
+import { producer } from './kafka/config';
  
 const app = express(); 
 
@@ -24,6 +25,8 @@ app.use(cors({
 }));
 
 myDataSource.initialize().then(async () => {
+    await producer.connect();
+
     await client.connect();
 
     routes(app);

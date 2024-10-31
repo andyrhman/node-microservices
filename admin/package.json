@@ -5,6 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "nodemon src/index.ts",
+    "consume": "ts-node src/kafka/consumer.ts",
     "seed:products": "ts-node src/seeder/product.seeder.ts",
     "seed:links": "ts-node src/seeder/link.seeder.ts",
     "seed:orders": "ts-node src/seeder/order.seeder.ts"

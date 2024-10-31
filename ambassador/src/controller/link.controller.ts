@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Link } from "../entity/link.entity";
 import myDataSource from "../config/db.config";
+import { producer } from "../kafka/config";
 
 export const CreateLink = async (req: Request, res: Response) => {
     try {
@@ -13,6 +14,16 @@ export const CreateLink = async (req: Request, res: Response) => {
                     id: id
                 };
             })
+        });
+
+        await producer.send({ 
+            topic: 'admin_topic',
+            messages: [
+                {
+                    key: "linkCreated",
+                    value: JSON.stringify(link)
+                }
+            ]
         });
 
         res.send(link);
