@@ -1,0 +1,42 @@
+services:
+  checkout_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: 'npm start'
+    ports:
+      - 8004:8000
+    volumes:
+      - '.:/app'
+    depends_on:
+      - checkout_db
+    networks:
+      - checkout
+      - users
+
+  checkout_consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: 'npm run consume'
+    depends_on:
+      - checkout_db
+    networks:
+      - checkout
+
+  checkout_db:
+    image: postgres:15.3
+    restart: always
+    env_file:
+      - ./.env
+    volumes:
+      - ./.pgdata:/var/lib/postgresql/data # Volume for persisting PostgreSQL data
+    ports:
+      - 54325:5432
+    networks:
+      - checkout
+
+networks:
+  checkout:
+  users:
+    external: true

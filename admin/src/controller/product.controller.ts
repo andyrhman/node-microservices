@@ -7,13 +7,23 @@ export const Products = async (req: Request, res: Response) => {
     try {
         const products = await myDataSource.getRepository(Product).find();
 
-        await producer.send({
-            topic: 'ambassador_topic',
-            messages: [
+        const messages = [
+            {
+                key: "productCreated",
+                value: JSON.stringify(products)
+            }
+        ];
+    
+        await producer.sendBatch({
+            topicMessages: [
                 {
-                    key: "productCreated",
-                    value: JSON.stringify(products)
-                }
+                    topic: 'ambassador_topic',
+                    messages
+                },
+                {
+                    topic: 'checkout_topic',
+                    messages
+                },
             ]
         });
 
@@ -50,14 +60,24 @@ export const UpdateProduct = async (req: Request, res: Response) => {
         await repository.update(req.params.id, req.body);
 
         const product = await repository.findOne({ where: { id: req.params.id } });
+        
+        const messages = [
+            {
+                key: "productUpdated",
+                value: JSON.stringify(product)
+            }
+        ];
 
-        await producer.send({
-            topic: 'ambassador_topic',
-            messages: [
+        await producer.sendBatch({
+            topicMessages: [
                 {
-                    key: "productUpdated",
-                    value: JSON.stringify(product)
-                }
+                    topic: 'ambassador_topic',
+                    messages
+                },
+                {
+                    topic: 'checkout_topic',
+                    messages
+                },
             ]
         });
 
@@ -72,13 +92,23 @@ export const DeleteProduct = async (req: Request, res: Response) => {
     try {
         await myDataSource.getRepository(Product).delete(req.params.id);
 
-        await producer.send({
-            topic: 'ambassador_topic',
-            messages: [
+        const messages = [
+            {
+                key: "productDeleted",
+                value: req.params.id
+            }
+        ];
+    
+        await producer.sendBatch({
+            topicMessages: [
                 {
-                    key: "productDeleted",
-                    value: req.params.id
-                }
+                    topic: 'ambassador_topic',
+                    messages
+                },
+                {
+                    topic: 'checkout_topic',
+                    messages
+                },
             ]
         });
 

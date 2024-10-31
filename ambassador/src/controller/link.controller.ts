@@ -16,12 +16,22 @@ export const CreateLink = async (req: Request, res: Response) => {
             })
         });
 
-        await producer.send({ 
-            topic: 'admin_topic',
-            messages: [
+        const messages = [
+            {
+                key: "linkCreated",
+                value: JSON.stringify(link)
+            }
+        ];
+    
+        await producer.sendBatch({
+            topicMessages: [
                 {
-                    key: "linkCreated",
-                    value: JSON.stringify(link)
+                    topic: 'admin_topic',
+                    messages
+                },
+                {
+                    topic: 'checkout_topic',
+                    messages
                 }
             ]
         });

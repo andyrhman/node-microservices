@@ -14,6 +14,7 @@ export const kafka = new Kafka({
         key: fs.readFileSync('src/cert/service.key', 'utf-8'),
         cert: fs.readFileSync('src/cert/service.cert', 'utf-8')
     },
+    // connectionTimeout: 25000
 });
 
 export const connectDBKafka = new DataSource({
